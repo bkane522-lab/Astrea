@@ -347,18 +347,18 @@ body{
 <script>
 /* ---------------- DATA ---------------- */
 const SIGNS = [
-  {k:'belier',   n:'Bélier',    g:'♈\uFE0E', el:'feu',   d:'21 mar – 19 avr'},
-  {k:'taureau',  n:'Taureau',   g:'♉\uFE0E', el:'terre', d:'20 avr – 20 mai'},
-  {k:'gemeaux',  n:'Gémeaux',   g:'♊\uFE0E', el:'air',   d:'21 mai – 20 juin'},
-  {k:'cancer',   n:'Cancer',    g:'♋\uFE0E', el:'eau',   d:'21 juin – 22 juil'},
-  {k:'lion',     n:'Lion',      g:'♌\uFE0E', el:'feu',   d:'23 juil – 22 aoû'},
-  {k:'vierge',   n:'Vierge',    g:'♍\uFE0E', el:'terre', d:'23 aoû – 22 sep'},
-  {k:'balance',  n:'Balance',   g:'♎\uFE0E', el:'air',   d:'23 sep – 22 oct'},
-  {k:'scorpion', n:'Scorpion',  g:'♏\uFE0E', el:'eau',   d:'23 oct – 21 nov'},
-  {k:'sagittaire',n:'Sagittaire',g:'♐\uFE0E',el:'feu',   d:'22 nov – 21 déc'},
-  {k:'capricorne',n:'Capricorne',g:'♑\uFE0E',el:'terre', d:'22 déc – 19 jan'},
-  {k:'verseau',  n:'Verseau',   g:'♒\uFE0E', el:'air',   d:'20 jan – 18 fév'},
-  {k:'poissons', n:'Poissons',  g:'♓\uFE0E', el:'eau',   d:'19 fév – 20 mar'}
+  {k:'belier',   n:'Bélier',    g:'♈\uFE0E', el:'feu',   d:'21 mar – 19 avr', art:'du '},
+  {k:'taureau',  n:'Taureau',   g:'♉\uFE0E', el:'terre', d:'20 avr – 20 mai', art:'du '},
+  {k:'gemeaux',  n:'Gémeaux',   g:'♊\uFE0E', el:'air',   d:'21 mai – 20 juin', art:'des '},
+  {k:'cancer',   n:'Cancer',    g:'♋\uFE0E', el:'eau',   d:'21 juin – 22 juil', art:'du '},
+  {k:'lion',     n:'Lion',      g:'♌\uFE0E', el:'feu',   d:'23 juil – 22 aoû', art:'du '},
+  {k:'vierge',   n:'Vierge',    g:'♍\uFE0E', el:'terre', d:'23 aoû – 22 sep', art:'de la '},
+  {k:'balance',  n:'Balance',   g:'♎\uFE0E', el:'air',   d:'23 sep – 22 oct', art:'de la '},
+  {k:'scorpion', n:'Scorpion',  g:'♏\uFE0E', el:'eau',   d:'23 oct – 21 nov', art:'du '},
+  {k:'sagittaire',n:'Sagittaire',g:'♐\uFE0E',el:'feu',   d:'22 nov – 21 déc', art:'du '},
+  {k:'capricorne',n:'Capricorne',g:'♑\uFE0E',el:'terre', d:'22 déc – 19 jan', art:'du '},
+  {k:'verseau',  n:'Verseau',   g:'♒\uFE0E', el:'air',   d:'20 jan – 18 fév', art:'du '},
+  {k:'poissons', n:'Poissons',  g:'♓\uFE0E', el:'eau',   d:'19 fév – 20 mar', art:'des '}
 ];
 const EL_LABEL = {feu:'Feu',terre:'Terre',air:'Air',eau:'Eau'};
 
@@ -512,7 +512,7 @@ function selectSign(k){
   renderWheel();
   previewSign(current);
   const btn = document.getElementById('enterBtn');
-  btn.disabled = false; btn.textContent = `Consulter le ciel du ${current.n}`;
+  btn.disabled = false; btn.textContent = `Consulter le ciel ${current.art}${current.n}`;
 }
 
 function commitWheel(){
@@ -520,7 +520,7 @@ function commitWheel(){
   if(!s) return;
   current = s;
   const btn = document.getElementById('enterBtn');
-  btn.disabled = false; btn.textContent = `Consulter le ciel du ${s.n}`;
+  btn.disabled = false; btn.textContent = `Consulter le ciel ${s.art}${s.n}`;
 }
 
 function initWheelDrag(){

@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0B0714">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Horoscope Astréa</title>
+<meta name="description" content="Astréa — ton horoscope quotidien, compatibilité et guidance du ciel.">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --void:#0B0714;
+  --night:#14102A;
+  --panel:#1B1436;
+  --violet:#6B4FCF;
+  --violet-glow:#9B7FE8;
+  --gold:#E8C56B;
+  --gold-bright:#F5D98A;
+  --ivory:#EDE7F5;
+  --muted:#9A8FB8;
+  --line:rgba(155,127,232,.18);
+  --serif:'Cormorant Garamond',Georgia,serif;
+  --sans:'Manrope',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:var(--sans);
+  background:var(--void);
+  color:var(--ivory);
+  overflow-x:hidden;
+  -webkit-tap-highlight-color:transparent;
+  position:relative;
+}
+/* starfield */
+.sky{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(1200px 700px at 50% -10%, rgba(107,79,207,.28), transparent 60%),
+    radial-gradient(900px 600px at 85% 110%, rgba(232,197,107,.10), transparent 55%),
+    var(--void);
+}
+.sky canvas{position:absolute;inset:0;width:100%;height:100%}
+.app{position:relative;z-index:1;min-height:100dvh;display:flex;flex-direction:column;
+  padding:calc(env(safe-area-inset-top) + 22px) 22px calc(env(safe-area-inset-bottom) + 28px);
+  max-width:560px;margin:0 auto}
+
+/* eyebrow / labels */
+.eyebrow{font-size:11px;letter-spacing:.42em;text-transform:uppercase;color:var(--gold);
+  font-weight:600;opacity:.85}
+.muted{color:var(--muted)}
+
+/* wordmark */
+.brand{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.brand .mark{font-family:var(--serif);font-weight:500;font-size:15px;letter-spacing:.5em;
+  color:var(--gold);text-transform:uppercase;padding-left:.5em}
+.brand h1{font-family:var(--serif);font-weight:300;font-size:clamp(46px,15vw,68px);
+  line-height:.95;letter-spacing:.01em}
+.brand h1 em{font-style:italic;color:var(--gold-bright)}
+
+/* screens */
+.screen{display:none;flex:1;flex-direction:column;animation:rise .6s cubic-bezier(.2,.7,.2,1)}
+.screen.active{display:flex}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* ---------- PORTAL ---------- */
+#portal{justify-content:space-between;gap:26px}
+.portal-top{display:flex;flex-direction:column;align-items:center;gap:20px;padding-top:6px}
+
+.wheel-wrap{position:relative;width:min(72vw,300px);aspect-ratio:1;display:grid;place-items:center;margin:6px 0}
+.wheel-wrap svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.ring-outer{animation:spin 90s linear infinite}
+.ring-inner{animation:spin 60s linear infinite reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ring text{font-family:var(--serif);fill:var(--gold);font-size:15px}
+.ring-inner text{fill:var(--violet-glow);font-size:12px}
+.wheel-core{width:38%;aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, rgba(245,217,138,.35), rgba(107,79,207,.15) 55%, transparent 72%);
+  border:1px solid var(--line);display:grid;place-items:center;
+  box-shadow:0 0 60px rgba(107,79,207,.35), inset 0 0 30px rgba(245,217,138,.12)}
+.wheel-core .glyph{font-family:var(--serif);font-size:clamp(34px,11vw,46px);color:var(--gold-bright);
+  line-height:1}
+.tagline{text-align:center;font-family:var(--serif);font-size:20px;font-weight:300;
+  font-style:italic;color:var(--muted);max-width:22ch;line-height:1.4}
+
+.sign-pick{background:var(--night);border:1px solid var(--line);border-radius:22px;padding:20px 18px 22px}
+.sign-pick .lbl{font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--muted);
+  margin-bottom:14px;display:block;text-align:center}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.zbtn{background:transparent;border:1px solid transparent;border-radius:14px;color:var(--ivory);
+  padding:11px 4px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;
+  transition:.22s;font-family:inherit}
+.zbtn .g{font-family:var(--serif);font-size:22px;color:var(--gold);line-height:1}
+.zbtn .n{font-size:10.5px;letter-spacing:.02em;color:var(--muted)}
+.zbtn:hover{background:var(--panel)}
+.zbtn.sel{background:linear-gradient(160deg,rgba(107,79,207,.35),rgba(232,197,107,.12));
+  border-color:var(--gold);box-shadow:0 0 24px rgba(107,79,207,.3)}
+.zbtn.sel .n{color:var(--ivory)}
+
+/* buttons */
+.cta{width:100%;border:none;border-radius:100px;padding:17px;font-family:var(--sans);
+  font-weight:600;font-size:15px;letter-spacing:.04em;cursor:pointer;transition:.22s;color:var(--void);
+  background:linear-gradient(100deg,var(--gold),var(--gold-bright));
+  box-shadow:0 10px 30px -8px rgba(232,197,107,.5)}
+.cta:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+.cta:not(:disabled):hover{transform:translateY(-2px)}
+.ghost{background:transparent;border:1px solid var(--line);color:var(--ivory);
+  border-radius:100px;padding:14px;font-family:var(--sans);font-weight:600;font-size:14px;
+  cursor:pointer;transition:.22s;width:100%}
+.ghost:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ---------- GALAXY ---------- */
+#galaxy{gap:22px}
+.gx-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.gx-you{display:flex;align-items:center;gap:12px}
+.gx-you .orb{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;
+  font-family:var(--serif);font-size:24px;color:var(--gold-bright);
+  background:radial-gradient(circle at 35% 30%, rgba(245,217,138,.3), rgba(107,79,207,.2));
+  border:1px solid var(--line)}
+.gx-you .meta small{display:block;font-size:10.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--muted)}
+.gx-you .meta b{font-family:var(--serif);font-weight:500;font-size:22px}
+.link-back{background:none;border:none;color:var(--muted);cursor:pointer;font-family:inherit;
+  font-size:13px;display:flex;align-items:center;gap:6px}
+.link-back:hover{color:var(--gold)}
+
+.modules{display:flex;flex-direction:column;gap:12px;flex:1}
+.mod{position:relative;text-align:left;background:var(--night);border:1px solid var(--line);
+  border-radius:20px;padding:18px 18px;cursor:pointer;transition:.24s;overflow:hidden;
+  display:flex;align-items:center;gap:16px;width:100%;font-family:inherit;color:var(--ivory)}
+.mod:hover{border-color:rgba(232,197,107,.5);transform:translateY(-2px);background:var(--panel)}
+.mod .ico{flex:none;width:44px;height:44px;border-radius:13px;display:grid;place-items:center;
+  font-family:var(--serif);font-size:24px;color:var(--gold);
+  background:linear-gradient(150deg,rgba(107,79,207,.25),rgba(232,197,107,.08));border:1px solid var(--line)}
+.mod .txt{flex:1}
+.mod .txt h3{font-family:var(--serif);font-weight:500;font-size:21px;line-height:1.1}
+.mod .txt p{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.35}
+.mod .lock{flex:none;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);
+  border:1px solid rgba(232,197,107,.4);border-radius:100px;padding:5px 10px;font-weight:600}
+.mod .arrow{flex:none;color:var(--muted);font-size:20px}
+
+/* ---------- MODAL ---------- */
+.scrim{position:fixed;inset:0;z-index:40;background:rgba(6,4,12,.72);backdrop-filter:blur(8px);
+  display:none;align-items:flex-end;justify-content:center;padding:0}
+.scrim.open{display:flex;animation:fade .3s}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.sheet{background:linear-gradient(180deg,var(--panel),var(--night));border:1px solid var(--line);
+  border-bottom:none;border-radius:28px 28px 0 0;width:100%;max-width:560px;max-height:90dvh;overflow-y:auto;
+  padding:14px 24px calc(env(safe-area-inset-bottom) + 30px);animation:sheetUp .4s cubic-bezier(.2,.8,.2,1)}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+.grab{width:42px;height:4px;border-radius:100px;background:var(--line);margin:6px auto 20px}
+.sheet .m-eyebrow{text-align:center;margin-bottom:6px}
+.sheet h2{font-family:var(--serif);font-weight:400;font-size:32px;text-align:center;margin-bottom:4px}
+.sheet .sub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:22px}
+
+.reading{background:var(--void);border:1px solid var(--line);border-radius:18px;padding:20px 20px;
+  font-family:var(--serif);font-size:19px;font-weight:300;line-height:1.62;color:var(--ivory);
+  white-space:pre-wrap}
+.reading .drop::first-letter{font-size:40px;color:var(--gold-bright);float:left;line-height:.8;
+  padding:6px 8px 0 0;font-weight:500}
+
+.facets{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+.facet{background:var(--void);border:1px solid var(--line);border-radius:14px;padding:12px 8px;text-align:center}
+.facet small{display:block;font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.facet b{font-family:var(--serif);font-size:20px;color:var(--gold)}
+.stars{color:var(--gold);letter-spacing:2px;font-size:15px}
+.stars .off{color:var(--line)}
+
+.actions{display:flex;gap:10px;margin-top:20px}
+.actions .cta,.actions .ghost{margin:0}
+
+/* compatibility picker */
+.compat-pick{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:20px}
+.compat-orb{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;
+  font-family:var(--serif);font-size:30px;color:var(--gold-bright);cursor:pointer;
+  background:radial-gradient(circle at 35% 30%, rgba(245,217,138,.28), rgba(107,79,207,.2));
+  border:1px solid var(--line);transition:.2s}
+.compat-orb.pick{border-color:var(--muted);color:var(--muted);font-size:13px;letter-spacing:.15em}
+.compat-heart{color:var(--gold);font-size:22px}
+.mini-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:18px}
+.mini-grid .zbtn{padding:9px 2px}
+.mini-grid .zbtn .g{font-size:19px}
+.mini-grid .zbtn .n{display:none}
+.score-ring{width:130px;height:130px;margin:0 auto 6px;position:relative;display:grid;place-items:center}
+.score-ring svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.score-ring b{font-family:var(--serif);font-size:40px;color:var(--gold-bright)}
+.score-ring b span{font-size:18px;color:var(--muted)}
+
+/* premium modal */
+.premium-hero{text-align:center;padding:6px 0 4px}
+.premium-hero .seal{width:70px;height:70px;margin:0 auto 14px;border-radius:50%;display:grid;place-items:center;
+  font-family:var(--serif);font-size:34px;color:var(--void);
+  background:linear-gradient(140deg,var(--gold),var(--gold-bright));
+  box-shadow:0 0 40px rgba(232,197,107,.45)}
+.perks{list-style:none;margin:20px 0;display:flex;flex-direction:column;gap:12px}
+.perks li{display:flex;gap:12px;align-items:flex-start;font-size:14.5px;line-height:1.4}
+.perks li .c{color:var(--gold);font-family:var(--serif);font-size:18px;flex:none;line-height:1.3}
+.perks li b{font-weight:600}
+.perks li span{color:var(--muted);display:block;font-size:12.5px}
+.key-row{margin-top:16px}
+.key-row label{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--muted);
+  display:block;margin-bottom:8px;text-align:center}
+.key-row input{width:100%;background:var(--void);border:1px solid var(--line);border-radius:14px;
+  padding:15px;color:var(--ivory);font-family:'Manrope',monospace;font-size:14px;text-align:center;
+  letter-spacing:.06em}
+.key-row input:focus{outline:none;border-color:var(--gold)}
+.note{text-align:center;font-size:12px;color:var(--muted);margin-top:14px;line-height:1.5}
+.note a{color:var(--gold)}
+.status{text-align:center;font-size:13px;margin-top:12px;min-height:18px}
+.status.err{color:#E88A8A}
+.status.ok{color:var(--gold-bright)}
+
+/* loader */
+.loader{display:flex;flex-direction:column;align-items:center;gap:16px;padding:30px 0}
+.loader .spin{width:34px;height:34px;border:2px solid var(--line);border-top-color:var(--gold);
+  border-radius:50%;animation:spin .9s linear infinite}
+.loader p{font-family:var(--serif);font-style:italic;color:var(--muted);font-size:16px}
+
+/* premium badge on galaxy */
+.crown{display:inline-flex;align-items:center;gap:6px;font-size:10px;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--void);background:linear-gradient(100deg,var(--gold),var(--gold-bright));
+  padding:5px 11px;border-radius:100px;font-weight:700}
+
+@media (prefers-reduced-motion:reduce){
+  .ring-outer,.ring-inner,.spin{animation:none !important}
+  .screen{animation:none}
+}
+</style>
+</head>
+<body>
+<div class="sky"><canvas id="stars"></canvas></div>
+
+<main class="app">
+
+  <!-- ========== PORTAL ========== -->
+  <section id="portal" class="screen active">
+    <div class="portal-top">
+      <div class="brand">
+        <span class="mark">Horoscope</span>
+        <h1>Astr<em>éa</em></h1>
+      </div>
+
+      <div class="wheel-wrap">
+        <svg viewBox="0 0 100 100" class="ring-outer" aria-hidden="true">
+          <g class="ring"><!-- outer glyphs injected --></g>
+          <circle cx="50" cy="50" r="47" fill="none" stroke="var(--line)" stroke-width=".4"/>
+        </svg>
+        <svg viewBox="0 0 100 100" class="ring-inner" aria-hidden="true">
+          <g class="ring"><!-- inner glyphs injected --></g>
+          <circle cx="50" cy="50" r="36" fill="none" stroke="rgba(232,197,107,.16)" stroke-width=".4"/>
+        </svg>
+        <div class="wheel-core"><span class="glyph" id="coreGlyph">✦</span></div>
+      </div>
+
+      <p class="tagline">Le ciel a quelque chose à te dire aujourd'hui.</p>
+    </div>
+
+    <div class="sign-pick">
+      <span class="lbl">Choisis ton signe</span>
+      <div class="grid" id="signGrid"></div>
+    </div>
+
+    <button class="cta" id="enterBtn" disabled>Consulter le ciel</button>
+  </section>
+
+  <!-- ========== GALAXY ========== -->
+  <section id="galaxy" class="screen">
+    <div class="gx-head">
+      <div class="gx-you">
+        <div class="orb" id="youGlyph">✦</div>
+        <div class="meta">
+          <small id="youDates">—</small>
+          <b id="youName">—</b>
+        </div>
+      </div>
+      <button class="link-back" onclick="goPortal()">↩ changer</button>
+    </div>
+
+    <div class="modules" id="modules"></div>
+
+    <button class="ghost" id="unlockBar" onclick="openPremium()">✦ Débloquer Astréa Complet</button>
+  </section>
+</main>
+
+<!-- ========== MODAL ========== -->
+<div class="scrim" id="scrim" onclick="if(event.target===this)closeSheet()">
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<script>
+/* ---------------- DATA ---------------- */
+const SIGNS = [
+  {k:'belier',   n:'Bélier',    g:'♈', el:'feu',   d:'21 mar – 19 avr'},
+  {k:'taureau',  n:'Taureau',   g:'♉', el:'terre', d:'20 avr – 20 mai'},
+  {k:'gemeaux',  n:'Gémeaux',   g:'♊', el:'air',   d:'21 mai – 20 juin'},
+  {k:'cancer',   n:'Cancer',    g:'♋', el:'eau',   d:'21 juin – 22 juil'},
+  {k:'lion',     n:'Lion',      g:'♌', el:'feu',   d:'23 juil – 22 aoû'},
+  {k:'vierge',   n:'Vierge',    g:'♍', el:'terre', d:'23 aoû – 22 sep'},
+  {k:'balance',  n:'Balance',   g:'♎', el:'air',   d:'23 sep – 22 oct'},
+  {k:'scorpion', n:'Scorpion',  g:'♏', el:'eau',   d:'23 oct – 21 nov'},
+  {k:'sagittaire',n:'Sagittaire',g:'♐',el:'feu',   d:'22 nov – 21 déc'},
+  {k:'capricorne',n:'Capricorne',g:'♑',el:'terre', d:'22 déc – 19 jan'},
+  {k:'verseau',  n:'Verseau',   g:'♒', el:'air',   d:'20 jan – 18 fév'},
+  {k:'poissons', n:'Poissons',  g:'♓', el:'eau',   d:'19 fév – 20 mar'}
+];
+const EL_LABEL = {feu:'Feu',terre:'Terre',air:'Air',eau:'Eau'};
+
+/* ---------------- STATE + STORAGE ---------------- */
+const store = {
+  get(k){ try{return localStorage.getItem(k)}catch(e){return null} },
+  set(k,v){ try{localStorage.setItem(k,v)}catch(e){} }
+};
+let current = null;                       // selected sign object
+let premium = store.get('astrea_premium') === '1';
+
+/* ---------------- SEEDED GENERATOR (free daily) ---------------- */
+function hash(str){let h=1779033703^str.length;for(let i=0;i<str.length;i++){h=Math.imul(h^str.charCodeAt(i),3432918353);h=h<<13|h>>>19}return function(){h=Math.imul(h^h>>>16,2246822507);h=Math.imul(h^h>>>13,3266489909);return((h^=h>>>16)>>>0)/4294967296}}
+function pick(rng,arr){return arr[Math.floor(rng()*arr.length)]}
+function todayKey(){const d=new Date();return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`}
+
+const POOLS = {
+  open:[
+    "Une clarté nouvelle traverse ta journée.",
+    "Les astres desserrent un nœud que tu portais depuis quelques jours.",
+    "Le ciel t'invite à ralentir pour mieux voir.",
+    "Quelque chose de longtemps attendu commence à mûrir.",
+    "Ta lumière intérieure se fait plus nette aujourd'hui.",
+    "Une porte que tu croyais fermée laisse filtrer un peu d'air.",
+    "Le mouvement des planètes te pousse doucement vers l'avant.",
+    "Tu retrouves un équilibre qui t'avait échappé."
+  ],
+  love:[
+    "En amour, ose dire ce que tu tais depuis trop longtemps ; on t'écoute mieux que tu ne le crois.",
+    "Une tendresse discrète se glisse dans tes échanges — laisse-la respirer.",
+    "Ton cœur cherche du vrai, pas du parfait : accueille la sincérité qui vient à toi.",
+    "Un lien se réchauffe si tu acceptes de baisser la garde ce soir.",
+    "Célibataire ou non, ta présence attire aujourd'hui ; savoure sans forcer.",
+    "Un malentendu se dissout dès que tu choisis la douceur plutôt que la raison."
+  ],
+  work:[
+    "Côté projets, une idée patiente demande enfin à être posée noir sur blanc.",
+    "Ton travail porte ses fruits même si personne ne l'a encore remarqué — persévère.",
+    "Tranche une décision que tu remets : ta première intuition est la bonne.",
+    "Une collaboration inattendue peut te faire gagner un temps précieux.",
+    "Concentre ton énergie sur une seule chose ; l'éparpillement te coûterait cher.",
+    "Un effort discret d'aujourd'hui prépare une reconnaissance de demain."
+  ],
+  energy:[
+    "Ton énergie est haute mais volatile : canalise-la avant qu'elle ne s'évapore.",
+    "Le corps réclame du repos ; écoute-le sans culpabiliser.",
+    "Une belle vitalité t'accompagne — profites-en pour bouger.",
+    "Protège ton calme : tout ne mérite pas ta réaction.",
+    "Ancre-toi dans le présent, l'agitation extérieure n'est pas la tienne."
+  ],
+  advice:[
+    "Le conseil du jour : dis oui à ce qui t'élève, non à ce qui t'épuise.",
+    "Le conseil du jour : la lenteur est aussi une forme d'avancée.",
+    "Le conseil du jour : offre-toi un geste simple qui te fait du bien.",
+    "Le conseil du jour : la clarté vient quand tu cesses de tout vouloir contrôler.",
+    "Le conseil du jour : fais confiance au timing, il travaille pour toi."
+  ]
+};
+const COLORS=['Or','Indigo','Ambre','Prune','Ivoire','Bleu nuit','Cuivre','Violet profond'];
+const KEYWORDS=['Clarté','Élan','Ancrage','Ouverture','Patience','Audace','Douceur','Renouveau'];
+
+function dailyReading(sign){
+  const rng = hash(sign.k + todayKey());
+  const text = [pick(rng,POOLS.open), pick(rng,POOLS.love), pick(rng,POOLS.work), pick(rng,POOLS.energy), pick(rng,POOLS.advice)].join(' ');
+  const luck = 1 + Math.floor(rng()*98);
+  const color = pick(rng,COLORS);
+  const word = pick(rng,KEYWORDS);
+  const stars = 3 + Math.floor(rng()*3); // 3–5
+  return {text, luck, color, word, stars};
+}
+
+/* ---------------- COMPATIBILITY (element based, deterministic) ---------------- */
+const EL_MATRIX = { // base affinity 0-100
+  feu:{feu:82,terre:52,air:90,eau:48},
+  terre:{feu:52,terre:80,air:55,eau:88},
+  air:{feu:90,terre:55,air:78,eau:58},
+  eau:{feu:48,terre:88,air:58,eau:84}
+};
+const COMPAT_TXT = {
+  high:"Une alchimie évidente. Vous vous comprenez sans traduire, et ce qui vous unit se renforce dans la durée.",
+  mid:"Un attrait réel qui demande un peu d'attention. Vos différences sont un moteur si vous les accueillez.",
+  low:"Le chemin est plus exigeant, mais les oppositions bien apprivoisées créent parfois les liens les plus profonds."
+};
+function compat(a,b){
+  const rng = hash(a.k+'-'+b.k);
+  let base = EL_MATRIX[a.el][b.el];
+  base += Math.floor(rng()*11)-5;           // ±5 nuance
+  base = Math.max(35,Math.min(98,base));
+  const band = base>=78?'high':base>=58?'mid':'low';
+  return {score:base, text:COMPAT_TXT[band]};
+}
+
+/* ---------------- BUILD PORTAL ---------------- */
+function buildWheel(){
+  const outer = document.querySelector('.ring-outer .ring');
+  const inner = document.querySelector('.ring-inner .ring');
+  SIGNS.forEach((s,i)=>{
+    const a1 = (i/12)*Math.PI*2 - Math.PI/2;
+    const x1 = 50 + 43*Math.cos(a1), y1 = 50 + 43*Math.sin(a1);
+    outer.innerHTML += `<text x="${x1.toFixed(2)}" y="${y1.toFixed(2)}" text-anchor="middle" dominant-baseline="middle">${s.g}</text>`;
+    const a2 = ((i+0.5)/12)*Math.PI*2 - Math.PI/2;
+    const x2 = 50 + 32*Math.cos(a2), y2 = 50 + 32*Math.sin(a2);
+    inner.innerHTML += `<text x="${x2.toFixed(2)}" y="${y2.toFixed(2)}" text-anchor="middle" dominant-baseline="middle">✦</text>`;
+  });
+}
+function buildSignGrid(){
+  const g = document.getElementById('signGrid');
+  g.innerHTML = SIGNS.map(s=>`
+    <button class="zbtn" data-k="${s.k}" onclick="selectSign('${s.k}')">
+      <span class="g">${s.g}</span><span class="n">${s.n}</span>
+    </button>`).join('');
+}
+function selectSign(k){
+  current = SIGNS.find(s=>s.k===k);
+  document.querySelectorAll('.zbtn').forEach(b=>b.classList.toggle('sel', b.dataset.k===k));
+  document.getElementById('coreGlyph').textContent = current.g;
+  const btn = document.getElementById('enterBtn');
+  btn.disabled = false; btn.textContent = `Consulter le ciel du ${current.n}`;
+}
+
+/* ---------------- NAV ---------------- */
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0)}
+function goPortal(){show('portal')}
+function enterGalaxy(){
+  if(!current) return;
+  document.getElementById('youGlyph').textContent = current.g;
+  document.getElementById('youName').textContent = current.n;
+  document.getElementById('youDates').textContent = current.d;
+  buildModules();
+  store.set('astrea_sign', current.k);
+  show('galaxy');
+}
+
+/* ---------------- MODULES ---------------- */
+const MODULES = [
+  {id:'daily',   ico:'☀', title:'Horoscope du jour', desc:'Ta lecture quotidienne, renouvelée chaque matin.', free:true},
+  {id:'compat',  ico:'♥', title:'Compatibilité',     desc:'L\'accord entre deux signes, cœur et énergie.',   free:false},
+  {id:'oracle',  ico:'✦', title:'Oracle Astréa',      desc:'Une lecture personnalisée, rien que pour toi.',    free:false},
+  {id:'moon',    ico:'☾', title:'Guidance du moment', desc:'Le climat des prochains jours et ton cap.',        free:false}
+];
+function buildModules(){
+  const wrap = document.getElementById('modules');
+  wrap.innerHTML = MODULES.map(m=>{
+    const locked = !m.free && !premium;
+    return `<button class="mod" onclick="openModule('${m.id}')">
+      <span class="ico">${m.ico}</span>
+      <span class="txt"><h3>${m.title}</h3><p>${m.desc}</p></span>
+      ${locked?'<span class="lock">Complet</span>':'<span class="arrow">→</span>'}
+    </button>`;
+  }).join('');
+  document.getElementById('unlockBar').style.display = premium ? 'none':'block';
+}
+function openModule(id){
+  const m = MODULES.find(x=>x.id===id);
+  if(!m.free && !premium){ openPremium(); return; }
+  if(id==='daily') renderDaily();
+  else if(id==='compat') renderCompat();
+  else if(id==='oracle') renderOracle();
+  else if(id==='moon') renderMoon();
+}
+
+/* ---------------- SHEET HELPERS ---------------- */
+const scrim = document.getElementById('scrim');
+const sheet = document.getElementById('sheet');
+function openSheet(html){ sheet.innerHTML = `<div class="grab"></div>`+html; scrim.classList.add('open'); document.body.style.overflow='hidden'; }
+function closeSheet(){ scrim.classList.remove('open'); document.body.style.overflow=''; }
+function starRow(n){let s='';for(let i=0;i<5;i++)s+= i<n?'★':'<span class="off">★</span>';return s}
+
+/* ---------------- DAILY ---------------- */
+function renderDaily(){
+  const r = dailyReading(current);
+  const dateStr = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+  openSheet(`
+    <div class="m-eyebrow eyebrow">${dateStr}</div>
+    <h2>${current.g} ${current.n}</h2>
+    <p class="sub">Ton ciel du jour</p>
+    <div class="reading"><span class="drop">${r.text}</span></div>
+    <div class="facets">
+      <div class="facet"><small>Journée</small><div class="stars">${starRow(r.stars)}</div></div>
+      <div class="facet"><small>Chiffre</small><b>${r.luck}</b></div>
+      <div class="facet"><small>Couleur</small><b style="font-size:16px">${r.color}</b></div>
+    </div>
+    <div class="actions">
+      <button class="ghost" onclick="shareCard('${current.n} · ${dateStr}', \`${r.text.replace(/`/g,'')}\`)">Partager</button>
+      <button class="cta" onclick="closeSheet()">Merci Astréa</button>
+    </div>`);
+}
+
+/* ---------------- COMPATIBILITY ---------------- */
+let compatB = null;
+function renderCompat(){
+  compatB = null;
+  openSheet(`
+    <div class="m-eyebrow eyebrow">Compatibilité</div>
+    <h2>Vos deux ciels</h2>
+    <p class="sub">${current.n} rencontre…</p>
+    <div class="compat-pick">
+      <div class="compat-orb">${current.g}</div>
+      <span class="compat-heart">♥</span>
+      <div class="compat-orb pick" id="compatOrb">?</div>
+    </div>
+    <div class="mini-grid" id="compatGrid">${SIGNS.map(s=>`<button class="zbtn" onclick="pickCompat('${s.k}')"><span class="g">${s.g}</span></button>`).join('')}</div>
+    <div id="compatResult"></div>`);
+}
+function pickCompat(k){
+  compatB = SIGNS.find(s=>s.k===k);
+  document.getElementById('compatOrb').classList.remove('pick');
+  document.getElementById('compatOrb').textContent = compatB.g;
+  const c = compat(current, compatB);
+  const circ = 2*Math.PI*54;
+  const off = circ*(1 - c.score/100);
+  document.getElementById('compatResult').innerHTML = `
+    <div class="score-ring">
+      <svg viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="54" fill="none" stroke="var(--line)" stroke-width="6"/>
+        <circle cx="60" cy="60" r="54" fill="none" stroke="url(#gg)" stroke-width="6" stroke-linecap="round"
+          stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"/>
+        <defs><linearGradient id="gg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#6B4FCF"/><stop offset="1" stop-color="#F5D98A"/></linearGradient></defs>
+      </svg>
+      <b>${c.score}<span>%</span></b>
+    </div>
+    <div class="reading" style="font-size:17px">${current.n} ${current.g} & ${compatB.n} ${compatB.g} — ${c.text}</div>
+    <div class="actions"><button class="cta" onclick="closeSheet()">Fermer</button></div>`;
+}
+
+/* ---------------- ORACLE (Groq-powered premium) ---------------- */
+function renderOracle(){
+  openSheet(`
+    <div class="m-eyebrow eyebrow">Oracle Astréa</div>
+    <h2>${current.g} ${current.n}</h2>
+    <p class="sub">Sur quoi veux-tu être guidé·e ?</p>
+    <div class="mini-grid" style="grid-template-columns:repeat(2,1fr)">
+      <button class="ghost" onclick="askOracle('l\\'amour et les liens')">♥ Amour</button>
+      <button class="ghost" onclick="askOracle('le travail et les projets')">✦ Chemin</button>
+      <button class="ghost" onclick="askOracle('l\\'énergie et le bien-être')">☾ Énergie</button>
+      <button class="ghost" onclick="askOracle('une question intérieure profonde')">◈ Intérieur</button>
+    </div>`);
+}
+async function askOracle(focus){
+  sheet.innerHTML = `<div class="grab"></div><div class="loader"><div class="spin"></div><p>Astréa consulte les astres…</p></div>`;
+  try{
+    const res = await fetch('/api/horoscope',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({sign:current.n, element:EL_LABEL[current.el], focus})
+    });
+    const data = await res.json();
+    const reading = (data && data.reading) ? data.reading : "Le ciel est voilé un instant. Réessaie dans quelques instants.";
+    openSheet(`
+      <div class="m-eyebrow eyebrow">Oracle Astréa</div>
+      <h2>${current.g} ${current.n}</h2>
+      <p class="sub">Sur ${focus}</p>
+      <div class="reading"><span class="drop">${reading}</span></div>
+      <div class="actions">
+        <button class="ghost" onclick="renderOracle()">Autre lecture</button>
+        <button class="cta" onclick="closeSheet()">Merci Astréa</button>
+      </div>`);
+  }catch(e){
+    openSheet(`<div class="m-eyebrow eyebrow">Oracle Astréa</div><h2>Le ciel est voilé</h2>
+      <p class="sub">La connexion aux astres a échoué. Réessaie dans un moment.</p>
+      <div class="actions"><button class="cta" onclick="renderOracle()">Réessayer</button></div>`);
+  }
+}
+
+/* ---------------- GUIDANCE / MOON (premium, deterministic weekly) ---------------- */
+function renderMoon(){
+  const rng = hash(current.k+'week'+Math.floor(Date.now()/6048e5));
+  const climates=[
+    "Les prochains jours favorisent la mise au clair. Ce que tu poses maintenant tiendra.",
+    "Une phase de recentrage s'ouvre : moins d'extérieur, plus d'essentiel.",
+    "Le vent tourne en ta faveur ; saisis les occasions sans précipitation.",
+    "Semaine de transition — laisse partir ce qui est fini pour accueillir la suite.",
+    "Ton magnétisme grandit : les bonnes personnes se rapprochent naturellement."
+  ];
+  const caps=["Avance à ton rythme.","Choisis la qualité, pas la quantité.","Ose une première étape.","Protège ton énergie.","Fais confiance au chemin."];
+  openSheet(`
+    <div class="m-eyebrow eyebrow">Guidance du moment</div>
+    <h2>${current.g} ${current.n}</h2>
+    <p class="sub">Le climat de ta semaine</p>
+    <div class="reading"><span class="drop">${pick(rng,climates)}</span></div>
+    <div class="facets" style="grid-template-columns:1fr">
+      <div class="facet"><small>Ton cap</small><b style="font-size:17px">${pick(rng,caps)}</b></div>
+    </div>
+    <div class="actions"><button class="cta" onclick="closeSheet()">Fermer</button></div>`);
+}
+
+/* ---------------- SHARE CARD (canvas) ---------------- */
+async function shareCard(title, body){
+  const c = document.createElement('canvas'); c.width=1080; c.height=1350;
+  const x=c.getContext('2d');
+  const g=x.createLinearGradient(0,0,1080,1350);
+  g.addColorStop(0,'#14102A');g.addColorStop(1,'#0B0714');
+  x.fillStyle=g;x.fillRect(0,0,1080,1350);
+  // stars
+  x.fillStyle='rgba(245,217,138,.5)';
+  for(let i=0;i<80;i++){x.globalAlpha=Math.random()*.7+.1;x.beginPath();x.arc(Math.random()*1080,Math.random()*1350,Math.random()*2.2,0,7);x.fill()}
+  x.globalAlpha=1;
+  // glow
+  const rg=x.createRadialGradient(540,430,20,540,430,320);
+  rg.addColorStop(0,'rgba(107,79,207,.45)');rg.addColorStop(1,'rgba(107,79,207,0)');
+  x.fillStyle=rg;x.beginPath();x.arc(540,430,320,0,7);x.fill();
+  // glyph
+  x.fillStyle='#F5D98A';x.textAlign='center';x.font='300 200px "Cormorant Garamond",serif';
+  x.fillText(current.g,540,500);
+  // wordmark
+  x.fillStyle='#E8C56B';x.font='600 30px Manrope,sans-serif';
+  x.fillText('H O R O S C O P E   A S T R É A',540,140);
+  // title
+  x.fillStyle='#EDE7F5';x.font='500 46px "Cormorant Garamond",serif';
+  x.fillText(title,540,640);
+  // body wrapped
+  x.font='300 40px "Cormorant Garamond",serif';x.fillStyle='#EDE7F5';
+  const words=body.split(' ');let line='',y=760;
+  for(const w of words){const t=line+w+' ';if(x.measureText(t).width>860){x.fillText(line,540,y);line=w+' ';y+=58;if(y>1230)break}else line=t}
+  x.fillText(line,540,y);
+  x.fillStyle='#9A8FB8';x.font='400 26px Manrope';x.fillText('✦ horoscope-astrea ✦',540,1290);
+
+  const blob = await new Promise(r=>c.toBlob(r,'image/png'));
+  const file = new File([blob],'astrea.png',{type:'image/png'});
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file], title:'Horoscope Astréa'}); return; }catch(e){}
+  }
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='astrea.png';a.click();
+}
+
+/* ---------------- PREMIUM ---------------- */
+function openPremium(){
+  openSheet(`
+    <div class="premium-hero">
+      <div class="seal">✦</div>
+      <div class="m-eyebrow eyebrow">Astréa Complet</div>
+      <h2 style="margin-top:4px">Ouvre tout le ciel</h2>
+      <p class="sub">L'horoscope du jour reste offert. Le reste t'attend.</p>
+    </div>
+    <ul class="perks">
+      <li><span class="c">♥</span><div><b>Compatibilité illimitée</b><span>L'accord de tous les couples de signes.</span></div></li>
+      <li><span class="c">✦</span><div><b>Oracle personnalisé</b><span>Des lectures uniques selon ta question du moment.</span></div></li>
+      <li><span class="c">☾</span><div><b>Guidance du moment</b><span>Le climat de ta semaine et ton cap.</span></div></li>
+      <li><span class="c">◈</span><div><b>Cartes de partage dorées</b><span>Ton ciel à partager en un geste.</span></div></li>
+    </ul>
+    <a class="cta" style="display:block;text-align:center;text-decoration:none" href="https://bkane522.gumroad.com/l/REMPLACER" target="_blank" rel="noopener">Obtenir Astréa Complet</a>
+    <div class="key-row">
+      <label>Déjà ta clé ?</label>
+      <input id="keyInput" placeholder="Colle ta clé de licence" autocomplete="off">
+    </div>
+    <button class="ghost" style="margin-top:12px" onclick="verifyKey()">Activer ma clé</button>
+    <div class="status" id="keyStatus"></div>
+    <p class="note">Le paiement se fait sur Gumroad. Ta clé t'est envoyée par mail juste après l'achat.</p>`);
+}
+async function verifyKey(){
+  const input = document.getElementById('keyInput');
+  const st = document.getElementById('keyStatus');
+  const key = (input.value||'').trim();
+  if(!key){ st.className='status err'; st.textContent='Colle ta clé de licence.'; return; }
+  st.className='status'; st.textContent='Vérification…';
+  try{
+    const res = await fetch('/api/verify-license',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({licenseKey:key})});
+    const data = await res.json();
+    if(data && data.valid){
+      premium=true; store.set('astrea_premium','1');
+      st.className='status ok'; st.textContent='✦ Astréa Complet activé. Bienvenue.';
+      buildModules();
+      setTimeout(closeSheet,1100);
+    }else{
+      st.className='status err'; st.textContent=(data&&data.error)||'Clé invalide.';
+    }
+  }catch(e){ st.className='status err'; st.textContent='Vérification impossible. Réessaie.'; }
+}
+
+/* ---------------- STARFIELD ---------------- */
+(function stars(){
+  const cv=document.getElementById('stars');const x=cv.getContext('2d');let w,h,pts;
+  function size(){w=cv.width=innerWidth;h=cv.height=innerHeight;pts=Array.from({length:Math.min(120,Math.floor(w*h/12000))},()=>({x:Math.random()*w,y:Math.random()*h,r:Math.random()*1.3+.2,a:Math.random(),s:Math.random()*.02+.004}))}
+  size();addEventListener('resize',size);
+  if(matchMedia('(prefers-reduced-motion:reduce)').matches){x.clearRect(0,0,w,h);pts.forEach(p=>{x.globalAlpha=.5;x.fillStyle='#E8C56B';x.beginPath();x.arc(p.x,p.y,p.r,0,7);x.fill()});return}
+  (function loop(){x.clearRect(0,0,w,h);pts.forEach(p=>{p.a+=p.s;const o=(Math.sin(p.a)+1)/2;x.globalAlpha=o*.7+.1;x.fillStyle=o>.6?'#F5D98A':'#9B7FE8';x.beginPath();x.arc(p.x,p.y,p.r,0,7);x.fill()});requestAnimationFrame(loop)})();
+})();
+
+/* ---------------- INIT ---------------- */
+buildWheel();
+buildSignGrid();
+document.getElementById('enterBtn').addEventListener('click', enterGalaxy);
+// restore last sign
+const last = store.get('astrea_sign');
+if(last){ const s=SIGNS.find(x=>x.k===last); if(s){ selectSign(last); } }
+</script>
+</body>
+</html>
